@@ -20,7 +20,6 @@
   tasks:
     - name: Install Ollama
       become: true
-      ansible.builtin.package:
-        name: ollama
-        state: latest
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://ollama.com/install.sh | sh
 
