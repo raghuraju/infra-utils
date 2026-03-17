@@ -1,0 +1,16 @@
+---
+- name: Install packages
+  hosts: all
+
+  tasks:
+    - name: Install packages
+      become: true
+      ansible.builtin.package:
+        name:
+          - git
+          - git-lfs
+          - bat
+          - tree
+          - nvim
+        state: latest
+
