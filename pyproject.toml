@@ -1,0 +1,9 @@
+[project]
+name = "infra-utils"
+version = "0.1.0"
+description = "Playbooks to manage your infrastructure"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ansible-dev-tools>=26.3.0",
+]
