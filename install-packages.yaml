@@ -11,6 +11,16 @@
           - git-lfs
           - bat
           - tree
-          - nvim
+          - neovim
+        state: latest
+
+- name: Install Ollama
+  hosts: gpu
+
+  tasks:
+    - name: Install Ollama
+      become: true
+      ansible.builtin.package:
+        name: ollama
         state: latest
 
