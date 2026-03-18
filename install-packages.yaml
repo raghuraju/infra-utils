@@ -28,5 +28,5 @@
       become: true
       ansible.builtin.shell:
         cmd: curl -fsSL https://claude.ai/install.sh | bash
-        creates: ~/.local/bin/claude
+        creates: /usr/local/bin/claude
 
