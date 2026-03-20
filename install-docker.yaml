@@ -1,0 +1,16 @@
+---
+- name: Install Docker on all nodes
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update cache
+      ansible.builtin.package:
+        update_cache: true
+    - name: Install packages
+      ansible.builtin.package:
+        name:
+          - ca-certificates
+          - curl
+        state: latest
+
