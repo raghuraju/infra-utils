@@ -242,7 +242,7 @@ end, { expr = true, silent = true, desc = "Up (wrap aware)"})
 -- Quick edit/reload config files
 vim.keymap.set("n", "<leader>1", function()
   -- edit init.lua
-  vim.cmd("edit " .. vim.fn.expand("$MYVIMRC"))
+  vim.cmd.edit(vim.fn.expand("$MYVIMRC"))
 end, { desc = "Open init.lua" })
 
 vim.keymap.set("n", "<leader>2", function()
@@ -380,7 +380,6 @@ packadd("nvim-lspconfig")
 packadd("mason.nvim")
 
 -- plugin config
-
 require("nvim-tree").setup({
   view = {
     width = 35,
@@ -508,6 +507,8 @@ end
 
 setup_treesitter()
 
+require("mason").setup({})
+
 -- LSP Config
 local diagnostic_signs = {
 	Error = " ",
@@ -548,7 +549,7 @@ do
   end
 end
 
-local function lst_on_attach(ev)
+local function lsp_on_attach(ev)
   local client = vim.lsp.get_client_by_id(ev.data.client_id)
   if not client then
     return
@@ -627,3 +628,25 @@ local function lst_on_attach(ev)
 	end
 end
 
+vim.api.nvim_create_autocmd("LspAttach", { group = augroup, callback = lsp_on_attach })
+
+vim.keymap.set("n", "<leader>q", function()
+  vim.diagnostic.setloclist({ open = "true" })
+end, { desc = "Open diagnostic list" })
+vim.keymap.set("n", "<leader>dl", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
+
+vim.lsp.config("lua_ls", {})
+vim.lsp.config("pyright", {})
+vim.lsp.config("bashls", {})
+vim.lsp.config("ts_ls", {})
+vim.lsp.config("gopls", {})
+vim.lsp.config("clangd", {})
+
+vim.lsp.enable({
+  "lua_ls",
+  "pyright",
+  "bashls",
+  "ts_ls",
+  "gopls",
+  "clangd",
+})
