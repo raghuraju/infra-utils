@@ -444,10 +444,12 @@ require("gitsigns").setup({
 })
 
 vim.keymap.set("n", "]h", function()
-  require("gitsigns").next_hunk()
+  -- deprecated: require("gitsigns").next_hunk()
+  require("gitsigns").nav_hunk("next")
 end, { desc = "Next git hunk" })
 vim.keymap.set("n", "[h", function()
-  require("gitsigns").prev_hunk()
+  -- deprecated: require("gitsigns").prev_hunk()
+  require("gitsigns").nav_hunk("prev")
 end, { desc = "Previous git hunk" })
 vim.keymap.set("n", "<leader>hs", function()
   require("gitsigns").stage_hunk()
@@ -631,11 +633,30 @@ end
 vim.api.nvim_create_autocmd("LspAttach", { group = augroup, callback = lsp_on_attach })
 
 vim.keymap.set("n", "<leader>q", function()
-  vim.diagnostic.setloclist({ open = "true" })
+  vim.diagnostic.setloclist({ open = true })
 end, { desc = "Open diagnostic list" })
 vim.keymap.set("n", "<leader>dl", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
 
-vim.lsp.config("lua_ls", {})
+vim.lsp.config("lua_ls", {
+  settings = {
+    Lua = {
+      runtime = {
+        version = "LuaJIT",
+      },
+      diagnostics = {
+        globals = { "vim" },
+      },
+      workspace = {
+        library = vim.api.nvim_get_runtime_file("", true),
+        checkThirdParty = false,
+      },
+      telemetry = {
+        enable = false,
+      },
+    }
+  }
+})
+
 vim.lsp.config("pyright", {})
 vim.lsp.config("bashls", {})
 vim.lsp.config("ts_ls", {})
