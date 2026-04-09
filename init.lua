@@ -239,7 +239,7 @@ vim.keymap.set("n", "k", function()
   return vim.v.count == 0 and "gk" or "k"
 end, { expr = true, silent = true, desc = "Up (wrap aware)"})
 
-vim.keymap.set("n", "<leader>1", ":e $MYVIMRC", { desc = "Edit init.lua" })
+vim.keymap.set("n", "<leader>1", ":e $MYVIMRC<CR>", { desc = "Edit init.lua" })
 vim.keymap.set("n", "<leader>c", ":nohlsearch<CR>", { desc = "Clear highlight search" })
 
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
