@@ -1,4 +1,5 @@
 vim.opt.termguicolors = true
+vim.opt.confirm = true
 vim.cmd.colorscheme("habamax")
 
 -- OPTIONS
@@ -238,7 +239,7 @@ vim.keymap.set("n", "k", function()
   return vim.v.count == 0 and "gk" or "k"
 end, { expr = true, silent = true, desc = "Up (wrap aware)"})
 
-vim.keymap.set("n", "<leader>1", ":e config/init.lua<CR>", { desc = "Temporary shortcut to open the init file" })
+vim.keymap.set("n", "<leader>1", ":e $MYVIMRC", { desc = "Edit init.lua" })
 vim.keymap.set("n", "<leader>c", ":nohlsearch<CR>", { desc = "Clear highlight search" })
 
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
@@ -340,6 +341,14 @@ vim.pack.add({
   "https://www.github.com/ibhagwan/fzf-lua",
   "https://www.github.com/nvim-mini/mini.nvim",
   "https://www.github.com/lewis6991/gitsigns.nvim",
+  {
+    src = "https://www.github.com/nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    build = ":TSUpdate",
+  },
+  --LSP
+  "https://github.com/neovim/nvim-lspconfig",
+  "https://github.com/mason-org/mason.nvim",
 })
 
 local function packadd(name)
@@ -351,6 +360,10 @@ packadd("fzf-lua")
 packadd("nvim-web-devicons")
 packadd("mini.nvim")
 packadd("gitsigns.nvim")
+packadd("nvim-treesitter")
+-- LSP
+packadd("nvim-lspconfig")
+packadd("mason.nvim")
 
 -- plugin config
 
@@ -416,3 +429,188 @@ require("gitsigns").setup({
   signcolumn = true,
   -- current_column_blame = false,
 })
+
+vim.keymap.set("n", "]h", function()
+  require("gitsigns").next_hunk()
+end, { desc = "Next git hunk" })
+vim.keymap.set("n", "[h", function()
+  require("gitsigns").prev_hunk()
+end, { desc = "Previous git hunk" })
+vim.keymap.set("n", "<leader>hs", function()
+  require("gitsigns").stage_hunk()
+end, { desc = "Stage hunk" })
+vim.keymap.set("n", "<leader>hr", function()
+  require("gitsigns").reset_hunk()
+end, { desc = "Reset hunk" })
+vim.keymap.set("n", "<leader>hp", function()
+  require("gitsigns").preview_hunk()
+end, { desc = "Preview Hunk" })
+vim.keymap.set("n", "<leader>hb", function()
+  require("gitsigns").blame_hunk()
+end, { desc = "Blame Hunk" })
+vim.keymap.set("n", "<leader>hB", function()
+  require("gitsigns").toggle_current_line_break()
+end, { desc = "Toggle inline blame" })
+vim.keymap.set("n", "<leader>hd", function()
+  require("gitsigns").diffthis()
+end, { desc = "Diff this" })
+
+local setup_treesitter = function()
+  local treesitter = require("nvim-treesitter")
+  treesitter.setup({})
+  local ensure_installed = {
+    "vim", "vimdoc",
+    "rust", "c", "cpp", "go",
+    "html", "css", "javascript",
+    "json", "lua", "markdown", "python",
+    "typescript", "vue", "svelte", "bash",
+  }
+
+  local config = require("nvim-treesitter.config")
+
+  local already_installed = config.get_installed()
+  local parsers_to_install = {}
+
+  for _, parser in ipairs(ensure_installed) do
+    if not vim.tbl_contains(already_installed, parser) then
+      table.insert(parsers_to_install, parser)
+    end
+  end
+
+  if #parsers_to_install > 0 then
+    treesitter.install(parsers_to_install)
+  end
+
+  local ts_group = vim.api.nvim_create_augroup("TreeSitterConfig", { clear = true })
+  vim.api.nvim_create_autocmd("FileType", {
+    group = ts_group,
+    callback = function(args)
+      if vim.list_contains(treesitter.get_installed(), vim.treesitter.language.get_lang(args.match)) then
+        vim.treesitter.start(args.buf)
+      end
+    end,
+  })
+end
+
+setup_treesitter()
+
+-- LSP Config
+local diagnostic_signs = {
+	Error = " ",
+	Warn = " ",
+	Hint = "",
+	Info = "",
+}
+
+vim.diagnostic.config({
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+	virtual_text = { prefix = "●", spacing = 4 },
+  signs = {
+    text = {
+			[vim.diagnostic.severity.ERROR] = diagnostic_signs.Error,
+			[vim.diagnostic.severity.WARN] = diagnostic_signs.Warn,
+			[vim.diagnostic.severity.INFO] = diagnostic_signs.Info,
+			[vim.diagnostic.severity.HINT] = diagnostic_signs.Hint,
+    }
+  },
+  float = {
+    border = "rounded",
+    source = "always",
+    header = "",
+    prefix = "",
+    focusable = false,
+    style = "minimal",
+  },
+})
+
+do
+  local orig = vim.lsp.util.open_floating_preview
+  function vim.lsp.util.open_floating_preview(contents, syntax, opts)
+    opts = opts or {}
+    opts.border = opts.border or "rounded"
+    return orig(contents, syntax, opts)
+  end
+end
+
+local function lst_on_attach(ev)
+  local client = vim.lsp.get_client_by_id(ev.data.client_id)
+  if not client then
+    return
+  end
+
+  local bufnr = ev.buf
+  local opts = { noremap = true, silent = true, buffer = bufnr }
+
+  vim.keymap.set("n", "<leader>gd", function()
+    require("fzf-lua").lsp_definitions( { jump_to_single_result = true })
+  end, opts)
+
+  vim.keymap.set("n", "<leader>gD", vim.lsp.buf.definition, opts)
+
+  vim.keymap.set("n", "<leader>gS", function()
+    vim.cmd("vsplit")
+    vim.lsp.buf.definition()
+  end, opts)
+
+  vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+  vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+
+  vim.keymap.set("n", "<leader>D", function()
+    vim.diagnostic.open_float({ scope = "line" })
+  end, opts)
+
+  vim.keymap.set("n", "<leader>d", function()
+    vim.diagnostic.open_float({ scope = "cursor" })
+  end, opts)
+
+	vim.keymap.set("n", "<leader>nd", function()
+		vim.diagnostic.jump({ count = 1 })
+	end, opts)
+
+	vim.keymap.set("n", "<leader>pd", function()
+		vim.diagnostic.jump({ count = -1 })
+	end, opts)
+
+	vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+
+	vim.keymap.set("n", "<leader>fd", function()
+		require("fzf-lua").lsp_definitions({ jump_to_single_result = true })
+	end, opts)
+
+  vim.keymap.set("n", "<leader>fr", function()
+		require("fzf-lua").lsp_references()
+	end, opts)
+
+  vim.keymap.set("n", "<leader>ft", function()
+		require("fzf-lua").lsp_typedefs()
+	end, opts)
+
+  vim.keymap.set("n", "<leader>fs", function()
+		require("fzf-lua").lsp_document_symbols()
+	end, opts)
+
+  vim.keymap.set("n", "<leader>fw", function()
+		require("fzf-lua").lsp_workspace_symbols()
+	end, opts)
+
+  vim.keymap.set("n", "<leader>fi", function()
+		require("fzf-lua").lsp_implementations()
+	end, opts)
+
+	if client:supports_method("textDocument/codeAction", bufnr) then
+		vim.keymap.set("n", "<leader>oi", function()
+			vim.lsp.buf.code_action({
+				context = { only = { "source.organizeImports" }, diagnostics = {} },
+				apply = true,
+				bufnr = bufnr,
+			})
+			vim.defer_fn(function()
+				vim.lsp.buf.format({ bufnr = bufnr })
+			end, 50)
+		end, opts)
+	end
+end
+
+
