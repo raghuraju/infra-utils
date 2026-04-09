@@ -239,7 +239,21 @@ vim.keymap.set("n", "k", function()
   return vim.v.count == 0 and "gk" or "k"
 end, { expr = true, silent = true, desc = "Up (wrap aware)"})
 
-vim.keymap.set("n", "<leader>1", ":e $MYVIMRC<CR>", { desc = "Edit init.lua" })
+-- Quick edit/reload config files
+vim.keymap.set("n", "<leader>1", function()
+  -- edit init.lua
+  vim.cmd("edit " .. vim.fn.expand("$MYVIMRC"))
+end, { desc = "Open init.lua" })
+
+vim.keymap.set("n", "<leader>2", function()
+  local ok, err = pcall(dofile, vim.fn.expand("$MYVIMRC"))
+  if ok then
+    print("Config reloaded ⚡️")
+  else
+    print("Reload failed: " .. err)
+  end
+end, { desc = "Reload config file" })
+
 vim.keymap.set("n", "<leader>c", ":nohlsearch<CR>", { desc = "Clear highlight search" })
 
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
@@ -612,5 +626,4 @@ local function lst_on_attach(ev)
 		end, opts)
 	end
 end
-
 
